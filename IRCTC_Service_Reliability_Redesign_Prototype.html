@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IRCTC Service Reliability Redesign – Academic Prototype</title>
+<style>
+:root{
+  --orange:#f47b20; --orange2:#ff9a3d; --navy:#17324d; --green:#198754;
+  --red:#c0392b; --yellow:#f4b400; --bg:#f5f7fa; --card:#fff; --muted:#687586;
+  --border:#e2e7ee; --shadow:0 10px 30px rgba(20,45,70,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:#1f2937}
+header{background:linear-gradient(110deg,var(--orange),var(--orange2));color:#fff;padding:16px 24px;position:sticky;top:0;z-index:10;box-shadow:0 4px 18px rgba(0,0,0,.12)}
+.header-inner{max-width:1180px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.brand{font-weight:800;font-size:20px}.badge{font-size:11px;background:rgba(255,255,255,.2);padding:5px 9px;border-radius:999px;margin-left:8px}
+nav button{background:transparent;border:0;color:#fff;font-weight:700;padding:9px 10px;border-radius:8px;cursor:pointer}
+nav button:hover,nav button.active{background:rgba(255,255,255,.18)}
+main{max-width:1180px;margin:28px auto;padding:0 18px}
+.notice{background:#fff7e8;border:1px solid #f5d79c;padding:14px 16px;border-radius:12px;margin-bottom:20px;font-size:13px}
+.screen{display:none}.screen.active{display:block}
+.grid{display:grid;grid-template-columns:1.35fr .85fr;gap:22px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+h1{margin:0 0 8px;font-size:28px;color:var(--navy)} h2{margin:0 0 14px;color:var(--navy);font-size:20px}
+h3{margin:18px 0 10px;color:var(--navy);font-size:15px}
+p{line-height:1.55}.muted{color:var(--muted);font-size:13px}
+label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;color:#46566a}
+input,select{width:100%;padding:12px;border:1px solid #ccd5df;border-radius:9px;font-size:14px;background:#fff}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.btn{border:0;border-radius:9px;padding:12px 16px;font-weight:800;cursor:pointer}
+.primary{background:var(--orange);color:#fff}.secondary{background:#eef3f7;color:var(--navy)}
+.success{background:#e9f8f0;color:#12683e;border:1px solid #b9e7cc}.danger{background:#fff0ef;color:#a12a21;border:1px solid #f2c0bc}
+.warning{background:#fff8df;color:#795b00;border:1px solid #f0dc8d}
+.train{border:1px solid var(--border);border-radius:12px;padding:14px;margin:10px 0;cursor:pointer}
+.train:hover{border-color:var(--orange);box-shadow:0 5px 15px rgba(244,123,32,.10)}
+.train-top{display:flex;justify-content:space-between;font-weight:800}.availability{color:var(--green);font-weight:800;font-size:13px}
+.price{font-weight:900;color:var(--navy)}
+.paybox{border:2px solid #f2d4bf;border-radius:14px;padding:16px;background:#fffaf6}
+.pay-option{display:flex;align-items:center;gap:10px;border:1px solid var(--border);padding:12px;border-radius:10px;margin:8px 0;cursor:pointer}
+.pay-option input{width:auto}.total{display:flex;justify-content:space-between;font-size:19px;font-weight:900;margin:16px 0}
+.stepper{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.step{padding:7px 10px;border-radius:999px;background:#eef2f6;color:#627083;font-size:12px;font-weight:700}.step.done{background:#e6f5ed;color:#176d43}.step.current{background:#fff0e3;color:#a9500e}
+.status{display:flex;align-items:center;gap:14px;padding:16px;border-radius:14px;margin:12px 0}
+.status-icon{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:900}
+.timeline{margin:18px 0}.tl{display:flex;gap:14px;position:relative;padding-bottom:20px}.dot{width:13px;height:13px;border-radius:50%;background:#cbd5df;margin-top:4px;flex:0 0 13px}.dot.on{background:var(--green)}.tl:not(:last-child):after{content:"";position:absolute;left:6px;top:17px;width:2px;height:calc(100% - 17px);background:#d9e1e8}
+.feature{padding:12px;border:1px solid var(--border);border-radius:11px;margin:8px 0}.feature strong{display:block;margin-bottom:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:11px;border-bottom:1px solid var(--border)}th{color:var(--navy);background:#f8fafc}
+footer{max-width:1180px;margin:30px auto 50px;padding:0 18px;color:var(--muted);font-size:12px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.row{grid-template-columns:1fr}.header-inner{align-items:flex-start;flex-direction:column}nav{width:100%;overflow:auto;white-space:nowrap}}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand">Rail Connect <span class="badge">Academic Redesign Prototype</span></div>
+    <nav>
+      <button class="nav active" data-screen="search">1 Search</button>
+      <button class="nav" data-screen="passenger">2 Passenger</button>
+      <button class="nav" data-screen="payment">3 Payment</button>
+      <button class="nav" data-screen="processing">4 Status</button>
+      <button class="nav" data-screen="recovery">5 Recovery</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="notice">
+    <strong>Prototype purpose:</strong> This is a student redesign concept for a Service Operations Management assignment.
+    It is <strong>not an official IRCTC interface</strong>. The redesign focuses on the identified operational gap:
+    payment → booking confirmation → failure handling → refund visibility.
+  </div>
+
+  <section id="search" class="screen active">
+    <div class="grid">
+      <div class="card">
+        <h1>Book a Train</h1>
+        <p class="muted">A calmer search journey with clear status information and fewer decision points.</p>
+        <div class="row">
+          <div><label>From</label><input value="Kochi (ERS)"></div>
+          <div><label>To</label><input value="Chennai (MAS)"></div>
+        </div>
+        <div class="row">
+          <div><label>Journey date</label><input type="date" value="2026-09-15"></div>
+          <div><label>Quota</label><select><option>General</option><option>Tatkal</option><option>Ladies</option></select></div>
+        </div>
+        <button class="btn primary" onclick="go('passenger')">Search Trains</button>
+      </div>
+      <div class="card">
+        <h2>Operations improvement</h2>
+        <div class="feature"><strong>Clear availability</strong><span class="muted">Show status and important booking conditions before checkout.</span></div>
+        <div class="feature"><strong>Peak-load visibility</strong><span class="muted">Display a simple service-status message when demand is high.</span></div>
+        <div class="feature"><strong>No surprise recovery</strong><span class="muted">Customers are told what happens if payment succeeds but booking fails.</span></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:22px">
+      <h2>Available trains</h2>
+      <div class="train" onclick="go('passenger')">
+        <div class="train-top"><span>12624 — Chennai Mail</span><span class="availability">AVAILABLE</span></div>
+        <p class="muted">ERS 20:10 → MAS 08:35 • 12h 25m</p>
+        <span class="price">₹1,240 • 3A</span>
+      </div>
+      <div class="train" onclick="go('passenger')">
+        <div class="train-top"><span>12646 — Millennium Express</span><span class="availability">AVAILABLE</span></div>
+        <p class="muted">ERS 21:30 → MAS 09:20 • 11h 50m</p>
+        <span class="price">₹1,310 • 3A</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="passenger" class="screen">
+    <div class="stepper"><span class="step done">Search</span><span class="step current">Passenger</span><span class="step">Payment</span><span class="step">Confirmation</span></div>
+    <div class="grid">
+      <div class="card">
+        <h1>Passenger Details</h1>
+        <div class="row">
+          <div><label>Passenger name</label><input value="Aravind S"></div>
+          <div><label>Age</label><input value="24"></div>
+        </div>
+        <div class="row">
+          <div><label>Berth preference</label><select><option>Lower</option><option>Middle</option><option>Upper</option></select></div>
+          <div><label>Food preference</label><select><option>Not required</option><option>Veg</option></select></div>
+        </div>
+        <button class="btn primary" onclick="go('payment')">Review & Proceed to Payment</button>
+      </div>
+      <div class="card">
+        <h2>Journey summary</h2>
+        <p><strong>12624 — Chennai Mail</strong></p>
+        <p class="muted">ERS → MAS • 15 Sep 2026 • 3A • 1 Adult</p>
+        <div class="warning"><strong>Before you pay:</strong><br>We will show a live booking status after payment. You will not need to pay again if the booking is still processing.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="payment" class="screen">
+    <div class="stepper"><span class="step done">Search</span><span class="step done">Passenger</span><span class="step current">Payment</span><span class="step">Confirmation</span></div>
+    <div class="grid">
+      <div class="card">
+        <h1>Review & Pay</h1>
+        <div class="paybox">
+          <p><strong>12624 — Chennai Mail</strong><br><span class="muted">ERS → MAS • 15 Sep 2026 • 3A</span></p>
+          <div class="total"><span>Total</span><span>₹1,240</span></div>
+          <h3>Choose payment method</h3>
+          <label class="pay-option"><input type="radio" name="pay" checked> UPI</label>
+          <label class="pay-option"><input type="radio" name="pay"> Card</label>
+          <label class="pay-option"><input type="radio" name="pay"> Net Banking</label>
+          <button class="btn primary" style="width:100%" onclick="go('processing')">Pay ₹1,240</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>New service-recovery promise</h2>
+        <div class="status success"><div class="status-icon">✓</div><div><strong>Payment protection</strong><br><span class="muted">If payment succeeds but booking is not confirmed immediately, your transaction will remain linked to this booking.</span></div></div>
+        <div class="feature"><strong>One status screen</strong><span class="muted">No guessing whether to retry or pay again.</span></div>
+        <div class="feature"><strong>Refund visibility</strong><span class="muted">If booking fails, show refund amount, destination and expected status.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="processing" class="screen">
+    <div class="stepper"><span class="step done">Search</span><span class="step done">Passenger</span><span class="step done">Payment</span><span class="step current">Confirmation</span></div>
+    <div class="card">
+      <h1>Booking Status</h1>
+      <div class="status warning">
+        <div class="status-icon" style="background:#fff0bf;color:#7b5a00">!</div>
+        <div><strong>Payment received — booking processing</strong><br><span class="muted">Do not pay again. We are waiting for the railway booking response.</span></div>
+      </div>
+      <div class="timeline">
+        <div class="tl"><div class="dot on"></div><div><strong>Payment received</strong><br><span class="muted">₹1,240 received successfully.</span></div></div>
+        <div class="tl"><div class="dot on"></div><div><strong>Booking request sent</strong><br><span class="muted">Request is being processed.</span></div></div>
+        <div class="tl"><div class="dot"></div><div><strong>Railway confirmation</strong><br><span class="muted">Waiting for final response.</span></div></div>
+      </div>
+      <div class="row">
+        <button class="btn secondary" onclick="go('search')">Return to Home</button>
+        <button class="btn primary" onclick="go('recovery')">Simulate Booking Failure</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="recovery" class="screen">
+    <div class="card">
+      <h1>Booking Failed — Payment Protected</h1>
+      <div class="status danger">
+        <div class="status-icon">!</div>
+        <div><strong>Ticket could not be confirmed</strong><br><span class="muted">Your payment was received, but the railway system did not confirm the ticket.</span></div>
+      </div>
+      <div class="grid">
+        <div>
+          <h2>Refund tracker</h2>
+          <div class="timeline">
+            <div class="tl"><div class="dot on"></div><div><strong>Payment received</strong><br><span class="muted">₹1,240</span></div></div>
+            <div class="tl"><div class="dot on"></div><div><strong>Booking failed</strong><br><span class="muted">Booking reference RC-2026-0915-001</span></div></div>
+            <div class="tl"><div class="dot on"></div><div><strong>Refund initiated</strong><br><span class="muted">₹1,240 → Original payment method</span></div></div>
+            <div class="tl"><div class="dot"></div><div><strong>Refund completed</strong><br><span class="muted">Status will update here.</span></div></div>
+          </div>
+        </div>
+        <div>
+          <h2>What can you do now?</h2>
+          <button class="btn primary" style="width:100%;margin-bottom:10px" onclick="alert('Demo: alternative train search opened.')">Find Alternative Train</button>
+          <button class="btn secondary" style="width:100%;margin-bottom:10px" onclick="alert('Demo: refund details opened.')">View Refund Details</button>
+          <button class="btn secondary" style="width:100%" onclick="alert('Demo: support request created with booking reference RC-2026-0915-001.')">Get Help</button>
+          <div class="notice" style="margin-top:15px;margin-bottom:0">The customer is never asked to guess whether to retry, wait, or contact support.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:22px">
+    <h2>Benchmark logic used in this concept</h2>
+    <table>
+      <tr><th>Observed benchmark capability</th><th>Redesign response</th></tr>
+      <tr><td>ConfirmTkt promotes secured multiple payment modes</td><td>Keep payment choices simple and show the total before payment.</td></tr>
+      <tr><td>ConfirmTkt promotes instant refund/cancellation visibility</td><td>Add a dedicated refund tracker after a failed booking.</td></tr>
+      <tr><td>ConfirmTkt provides alternate-train/prediction features</td><td>Offer an “Find Alternative Train” recovery action after failure.</td></tr>
+      <tr><td>ConfirmTkt highlights 24×7 booking/enquiry support</td><td>Make support accessible directly from the failed-booking state.</td></tr>
+    </table>
+  </section>
+</main>
+
+<footer>
+  Academic prototype only. UI and wording are original student-design concepts inspired by the service-operations findings.
+</footer>
+
+<script>
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active', b.dataset.screen===id));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('.nav').forEach(b=>b.addEventListener('click',()=>go(b.dataset.screen)));
+</script>
+</body>
+</html>
